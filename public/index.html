@@ -47,7 +47,99 @@
                 document.onkeyup = function(ev) {
                     keysThatAreDown[ev.keyCode] = false;
                     socket.emit('key_up', ev.keyCode);
+                };
+
+                document.onmousedown = function(ev) {
+
+                };
+
+                document.onmouseup = function(ev) {
+
+                };
+
+                var ctx = $("#drawing_canvas").get(0).getContext('2d');
+                var trackingMouse = false;
+                var lastX = -1, lastY = -1, lastT;
+                var commandQueue = [];
+
+                var runCommands = function() {
+                    if(commandQueue.length == 0) {
+                        socket.emit('key_down', t);
+                        socket.emit('key_up', t);
+                        return;
+                    }
+                    var op = commandQueue.pop();
+
+                    setTimeout(function(){
+                        socket.emit('key_down', op.key);
+                        setTimeout(function(){
+                            socket.emit('key_up', op.key);
+                            setTimeout(function(){
+                                runCommands();
+                            }, op.dT);
+                        }, op.dT);
+                    }, op.dT);
                 }
+
+                $("#drawing_canvas").mousemove(function(ev) {
+                    if (!trackingMouse) {
+                        return;
+                    }
+                    var x = ev.offsetX,
+                        y = ev.offsetY,
+                        now = Date.now();
+
+                    if (lastX == -1 || lastY == -1) {
+                        lastX = x;
+                        lastY = y;
+                        lastT = Date.now();
+                        return
+                    }
+
+                    var dX = x - lastX,
+                        dY = y - lastY,
+                        dT = lastT - now;
+
+                    if (dX < 0) {
+                        // Move left
+                        console.log("left");
+                        commandQueue.push({key:q, dT: dT});
+                    } else {
+                        // Move right
+                        console.log("right");
+                        commandQueue.push({key:e, dT: dT});
+                    }
+
+                    if (dY < 0) {
+                        // Move front
+                        console.log("front");
+                        commandQueue.push({key:w, dT: dT});
+                    } else {
+                        // Move back
+                        console.log("back");
+                        commandQueue.push({key:s, dT: dT});
+                    }
+
+                    lastX = x;
+                    lastY = y;
+                    lastT = now;
+
+                });
+
+
+                $("#drawing_canvas").mousedown(function(ev){
+                    console.log("Mouse down at " + ev);
+                    trackingMouse = true;
+                });
+
+                $("#drawing_canvas").mouseup(function(ev){
+                    console.log("Mouse up at " + ev);
+                    trackingMouse = false;
+                    lastX = -1, lastY = -1, lastT = -1;
+                    socket.emit('key_down', t);
+                    socket.emit('key_up', t);
+                    runCommands();
+                });
             }
             startArDRoneStream();
             startArDroneController();
@@ -135,5 +227,6 @@
     <div class="interface interface-right"></div>
 </div>
 
+<canvas id="drawing_canvas" width="500" height="500" style="background-color: red;"></canvas>
 </body>
 </html>
