@@ -12,6 +12,14 @@
                 new NodecopterStream(document.getElementById("placeholder"), {port: 3001});
             }
 
+            function addAniClass(el){
+                return $(el).addClass('animation');
+            }
+            function removeAniClass(el){
+                return $(el).removeClass('animation');
+            }
+
+
             function startArDroneController(){
                 var socket = io.connect('http://localhost:3002');
                 socket.on('connect', function () { // TIP: you can avoid listening on `connect` and listen on events directly too!
@@ -41,12 +49,43 @@
                 document.onkeydown = function(ev) {
                     if (keysThatAreDown[ev.keyCode]) { return; }
                     keysThatAreDown[ev.keyCode] = true;
+
+
+                    switch(ev.keyCode) {
+                        case w:
+                            addAniClass('.interface-forward');
+                            break;
+                        case e:
+                            addAniClass('.interface-right');
+                            break;
+                        case s:
+                            addAniClass('.interface-backwards');
+                            break;
+                        case q:
+                            addAniClass('.interface-left');
+                            break;
+                    }
+
                     socket.emit('key_down', ev.keyCode);
                 };
 
                 document.onkeyup = function(ev) {
                     keysThatAreDown[ev.keyCode] = false;
                     socket.emit('key_up', ev.keyCode);
+                    switch(ev.keyCode) {
+                        case w:
+                            removeAniClass('.interface-forward');
+                            break;
+                        case e:
+                            removeAniClass('.interface-right');
+                            break;
+                        case s:
+                            removeAniClass('.interface-backwards');
+                            break;
+                        case q:
+                            removeAniClass('.interface-left');
+                            break;
+                    }
                 };
 
                 document.onmousedown = function(ev) {
@@ -79,7 +118,7 @@
                             }, op.dT);
                         }, op.dT);
                     }, op.dT);
-                }
+                };
 
                 $("#drawing_canvas").mousemove(function(ev) {
                     if (!trackingMouse) {
@@ -161,6 +200,8 @@
             background: #333;
             overflow: hidden;
             border-radius: 50px;
+            width:640px;
+            box-sizing:border-box;
         }
         .bar > span {
             display: block;
@@ -175,12 +216,13 @@
         }
         #placeholder{
             position:relative;
-            height:720px;
-            width:1280px;
+            height:360px;
+            width:640px;
             overflow:hidden;
         }
         .interface{
-            background:red;
+            -webkit-transition: background-color 0.5s ease;
+            background:none;
             display:block;
             position:absolute;
             z-index:10;
@@ -197,22 +239,27 @@
         .interface-left{
             height:100%;
             width:20px;
-            background:green;
             top:0;
             left:0;
         }
         .interface-right{
             height:100%;
             width:20px;
-            background:green;
             top:0;
             right:0;
+        }
+        canvas{
+            position:absolute;
+            top:0;
+            left:0;
         }
         img{
             width:100%;
             position:relative;
             z-index:1;
+            height:auto;
         }
+        .animation{ -webkit-transition: background-color 0.5s ease; background:rgba(255,223,0,0.5); }
      </style>
 </head>
 <body>
@@ -225,6 +272,8 @@
     <div class="interface interface-backwards"></div>
     <div class="interface interface-left"></div>
     <div class="interface interface-right"></div>
+    <img src="Hind_Cockpit_BO.png" style="z-index:2;">
+    <img src="ksp_idle_gif.gif" style="width:128px;height:286px;position:absolute;left:50%;top:15%;z-index:1;">
 </div>
 
 <canvas id="drawing_canvas" width="500" height="500" style="background-color: red;"></canvas>
